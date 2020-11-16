@@ -1331,8 +1331,8 @@ include(linting_target)
 # Enable shared library with `-DBUILD_SHARED_LIBS=ON`
 
 set(cmake_configfile_install ${CMAKE_INSTALL_LIBDIR}/cmake/open62541)
-set(open62541_install_tools_dir share/open62541/tools)
-set(open62541_install_nodeset_dir share/open62541/tools/ua-nodeset)
+set(open62541_install_tools_dir server/open62541/tools)
+set(open62541_install_nodeset_dir server/open62541/tools/ua-nodeset)
 
 # This list of components allows to define a find_package requirement.
 # E.g.:
@@ -1461,7 +1461,7 @@ if(UA_PACK_DEBIAN)
         "examples/nodeset"
         "examples/pubsub")
 
-    set(open62541_install_examples_dir share/open62541/examples)
+    set(open62541_install_examples_dir server/open62541/examples)
     install(DIRECTORY ${UA_install_examples_dirs} COMPONENT examples DESTINATION ${open62541_install_examples_dir} USE_SOURCE_PERMISSIONS)
 endif()
 

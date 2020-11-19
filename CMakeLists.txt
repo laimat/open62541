@@ -1155,6 +1155,8 @@ if(UA_ENABLE_AMALGAMATION)
     
     if(UA_ENABLE_PAM)
         include_directories_private(${PAM_INCLUDE_DIRS})
+        include_directories_private(${PAM_MISC_INCLUDE_DIRS})
+        include_directories_private(${PAMC_INCLUDE_DIRS})
     endif()
     
     if(UA_ENABLE_ENCRYPTION_MBEDTLS)
@@ -1244,8 +1246,8 @@ else()
 
     if(UA_ENABLE_PAM)
         include_directories_private(${PAM_INCLUDE_DIRS})
-        include_directories_private(${PAM_MISC_INCLUDE_DIR})
-        include_directories_private(${PAMC_INCLUDE_DIR})
+        include_directories_private(${PAM_MISC_INCLUDE_DIRS})
+        include_directories_private(${PAMC_INCLUDE_DIRS})
     endif()
 
     if(UA_ENABLE_ENCRYPTION_MBEDTLS)

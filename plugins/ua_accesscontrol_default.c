@@ -34,24 +34,90 @@ const UA_String username_policy = UA_STRING_STATIC(USERNAME_POLICY);
 
 #ifdef UA_ENABLE_PAM
 
+/* Service modules do not clean up responses if an error is returned.
+ * Free responses here.
+ */
+static void
+free_resp(int num_msg, struct pam_response *pr) {
+    int i;
+    struct pam_response *r = pr;
+    if(pr == NULL)
+        return;
+
+    for(i = 0; i < num_msg; i++, r++) {
+
+        if(r->resp) {
+            /* clear before freeing -- may be a password */
+            bzero(r->resp, strlen(r->resp));
+            free(r->resp);
+            r->resp = NULL;
+        }
+    }
+    free(pr);
+}
+
 static int
 convCallback(int num_msg, const struct pam_message **msg, struct pam_response **resp,
              void *appdata_ptr) {
+
     struct pam_response *aresp;
+    int i;
 
     if(num_msg <= 0 || num_msg > PAM_MAX_NUM_MSG) {
-
+        *resp = NULL;
         return (PAM_CONV_ERR);
     }
-    aresp = (struct pam_response *)calloc((size_t)num_msg, sizeof *aresp);
 
-    if(aresp == NULL)
+    if((*resp = aresp = (struct pam_response *)calloc(
+            (size_t)num_msg, sizeof(struct pam_response))) == NULL)
         return (PAM_BUF_ERR);
 
-    aresp[0].resp_retcode = 0;
-    aresp[0].resp = strdup((char *)appdata_ptr);
+    for(i = 0; i < num_msg; ++i) {
 
-    *resp = aresp;
+        /* bad message from service module */
+        if(msg[i]->msg == NULL) {
+            // TODO Log
+            free_resp(i, aresp);
+            *resp = NULL;
+            return (PAM_CONV_ERR);
+        }
+
+        aresp[i].resp_retcode = 0;
+        aresp[i].resp = NULL;
+        switch(msg[i]->msg_style) {
+            case PAM_PROMPT_ECHO_OFF:
+            /*FALLTHROUGH*/
+            case PAM_PROMPT_ECHO_ON:
+                aresp[i].resp = strdup((char *)appdata_ptr);
+                if(aresp[i].resp == NULL) {
+                    free_resp(i, aresp);
+                    *resp = NULL;
+                    return (PAM_CONV_ERR);
+                }
+                break;
+            case PAM_ERROR_MSG:
+                // TODO Log Error msg
+                if(aresp[i].resp == NULL) {
+                    free_resp(i, aresp);
+                    *resp = NULL;
+                    return (PAM_CONV_ERR);
+                }
+                break;
+            case PAM_TEXT_INFO:
+                // TODO Log Info msg
+                if(strlen(msg[i]->msg) > 0 &&
+                   msg[i]->msg[strlen(msg[i]->msg) - 1] != '\n')
+                    fputc('\n', stdout);
+                break;
+            default:
+                // TODO Log Error out... we should never reach this code
+                if(aresp[i].resp == NULL) {
+                    free_resp(i, aresp);
+                    *resp = NULL;
+                    return (PAM_CONV_ERR);
+                }
+        }
+    }
 
     return (PAM_SUCCESS);
 }
@@ -123,7 +189,7 @@ activateSession_default(UA_Server *server, UA_AccessControl *ac,
 #ifdef UA_ENABLE_PAM
         int retval;
         pam_handle_t *pamh = NULL;
-
+        printf("pam_start\n");
         /* init the password string and add one char for the string terminator (/n) */
         char pw[userToken->password.length + 1];
         memset(pw, '\0', sizeof(pw));
@@ -322,6 +388,7 @@ UA_AccessControl_default(UA_ServerConfig *config, UA_Boolean allowAnonymous,
     /* Allow anonymous? */
     context->allowAnonymous = allowAnonymous;
 
+#ifndef UA_ENABLE_PAM
     /* Copy username/password to the access control plugin */
     if(usernamePasswordLoginSize > 0) {
         context->usernamePasswordLogin = (UA_UsernamePasswordLogin *)UA_malloc(
@@ -336,13 +403,21 @@ UA_AccessControl_default(UA_ServerConfig *config, UA_Boolean allowAnonymous,
                            &context->usernamePasswordLogin[i].password);
         }
     }
+#endif
 
     /* Set the allowed policies */
     size_t policies = 0;
     if(allowAnonymous)
         policies++;
+
+#ifdef UA_ENABLE_PAM
+    policies++;
+#else
+    /* Set the allowed policies */
     if(usernamePasswordLoginSize > 0)
         policies++;
+#endif
+
     ac->userTokenPoliciesSize = 0;
     ac->userTokenPolicies =
         (UA_UserTokenPolicy *)UA_Array_new(policies, &UA_TYPES[UA_TYPES_USERTOKENPOLICY]);
@@ -359,7 +434,9 @@ UA_AccessControl_default(UA_ServerConfig *config, UA_Boolean allowAnonymous,
         policies++;
     }
 
+#ifndef UA_ENABLE_PAM
     if(usernamePasswordLoginSize > 0) {
+#endif
         ac->userTokenPolicies[policies].tokenType = UA_USERTOKENTYPE_USERNAME;
         ac->userTokenPolicies[policies].policyId = UA_STRING_ALLOC(USERNAME_POLICY);
         if(!ac->userTokenPolicies[policies].policyId.data)
@@ -369,14 +446,16 @@ UA_AccessControl_default(UA_ServerConfig *config, UA_Boolean allowAnonymous,
         const UA_String noneUri =
             UA_STRING("http://opcfoundation.org/UA/SecurityPolicy#None");
         if(UA_ByteString_equal(userTokenPolicyUri, &noneUri)) {
-            UA_LOG_WARNING(
-                &config->logger, UA_LOGCATEGORY_SERVER,
-                "Username/Password configured, but no encrypting SecurityPolicy. "
-                "This can leak credentials on the network.");
+            UA_LOG_WARNING(&config->logger, UA_LOGCATEGORY_SERVER,
+                           "Username/Password access control configured, but no "
+                           "encrypting SecurityPolicy. "
+                           "This can leak credentials on the network.");
         }
 #endif
         return UA_ByteString_copy(userTokenPolicyUri,
                                   &ac->userTokenPolicies[policies].securityPolicyUri);
+#ifndef UA_ENABLE_PAM
     }
+#endif
     return UA_STATUSCODE_GOOD;
 }

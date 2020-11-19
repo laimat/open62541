@@ -137,6 +137,7 @@ option(UA_ENABLE_SUBSCRIPTIONS_EVENTS "Enable the use of event subscriptions" OF
 option(UA_ENABLE_DISCOVERY "Enable Discovery Service (LDS)" OFF)
 option(UA_ENABLE_SUBSCRIPTIONS_ALARMS_CONDITIONS "Enable the use of A&C. (EXPERIMENTAL)" OFF)
 option(UA_ENABLE_DISCOVERY_MULTICAST "Enable Discovery Service with multicast support (LDS-ME)" OFF)
+option(UA_ENABLE_PAM "Enable use of UNIX PAM for athorization" OFF)
 option(UA_ENABLE_ENCRYPTION "Enable encryption support (uses mbedTLS by default)" OFF)
 option(UA_ENABLE_ENCRYPTION_OPENSSL "Enable encryption support (uses openssl)" OFF)
 option(UA_ENABLE_ENCRYPTION_MBEDTLS "Enable encryption support (uses mbedTLS)" OFF)
@@ -450,6 +451,11 @@ include(linting_build)
 ######################
 
 list(APPEND open62541_LIBRARIES "")
+
+if(UA_ENABLE_PAM)
+    find_package(Pam REQUIRED)
+    list(APPEND open62541_LIBRARIES ${PAM_LIBRARIES})
+endif()
 
 if(UA_ENABLE_ENCRYPTION)
     if(UA_ENABLE_ENCRYPTION_OPENSSL)
@@ -1146,6 +1152,11 @@ if(UA_ENABLE_AMALGAMATION)
     add_library(open62541-object OBJECT ${PROJECT_BINARY_DIR}/open62541.c ${PROJECT_BINARY_DIR}/open62541.h)
     target_include_directories(open62541-object PRIVATE ${PROJECT_BINARY_DIR})
     target_include_directories(open62541-object PRIVATE "${ua_architecture_directories_to_include}")
+    
+    if(UA_ENABLE_PAM)
+        include_directories_private(${PAM_INCLUDE_DIRS})
+    endif()
+    
     if(UA_ENABLE_ENCRYPTION_MBEDTLS)
         target_include_directories(open62541-object PRIVATE ${MBEDTLS_INCLUDE_DIRS})
     endif()
@@ -1230,6 +1241,12 @@ else()
 
     # Private includes
     include_directories_private("${PROJECT_BINARY_DIR}")
+
+    if(UA_ENABLE_PAM)
+        include_directories_private(${PAM_INCLUDE_DIRS})
+        include_directories_private(${PAM_MISC_INCLUDE_DIR})
+        include_directories_private(${PAMC_INCLUDE_DIR})
+    endif()
 
     if(UA_ENABLE_ENCRYPTION_MBEDTLS)
         include_directories_private(${MBEDTLS_INCLUDE_DIRS})

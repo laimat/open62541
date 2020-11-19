@@ -1,0 +1,28 @@
+#check environment variable
+if("$ENV{PAM_FOLDER_INCLUDE}")
+    set(PAM_FOLDER_INCLUDE "$ENV{PAM_FOLDER_INCLUDE}")
+endif()
+if("$ENV{PAM_FOLDER_LIBRARY}")
+    set(PAM_FOLDER_LIBRARY "$ENV{PAM_FOLDER_LIBRARY}")
+endif()
+
+find_path(PAM_INCLUDE_DIRS security/pam_apple.h HINTS ${PAM_FOLDER_INCLUDE})
+find_path(PAM_MISC_INCLUDE_DIRS security/pam_misc.h HINTS ${PAM_FOLDER_INCLUDE})
+find_path(PAMC_INCLUDE_DIRS security/libpamc.h HINTS ${PAM_FOLDER_INCLUDE})
+
+find_library(PAM_LIBRARY pam HINTS ${PAM_FOLDER_LIBRARY})
+find_library(PAM_MISC_LIBRARY pam_misc HINTS ${PAM_FOLDER_LIBRARY})
+
+add_library(pam UNKNOWN IMPORTED)
+set_property(TARGET pam PROPERTY IMPORTED_LOCATION "${PAM_LIBRARY}")
+
+add_library(pam_misc UNKNOWN IMPORTED)
+set_property(TARGET pam_misc PROPERTY IMPORTED_LOCATION "${PAM_MISC_LIBRARY}")
+
+set(PAM_LIBRARIES pam pam_misc)
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(PAM DEFAULT_MSG
+        PAM_INCLUDE_DIRS PAM_MISC_INCLUDE_DIRS PAMC_INCLUDE_DIRS PAM_LIBRARY PAM_MISC_LIBRARY)
+
+mark_as_advanced(PAM_INCLUDE_DIRS PAM_MISC_INCLUDE_DIRS PAMC_INCLUDE_DIRS  PAM_LIBRARY PAM_MISC_LIBRARY)

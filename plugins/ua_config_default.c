@@ -145,14 +145,14 @@ setDefaultConfig(UA_ServerConfig *conf) {
 
     conf->shutdownDelay = 0.0;
 
-    /* Server Description */
-    UA_BuildInfo_clear(&conf->buildInfo);
-    conf->buildInfo.productUri = UA_STRING_ALLOC(PRODUCT_URI);
-    conf->buildInfo.manufacturerName = UA_STRING_ALLOC(MANUFACTURER_NAME);
-    conf->buildInfo.productName = UA_STRING_ALLOC(PRODUCT_NAME);
-    conf->buildInfo.softwareVersion =
-        UA_STRING_ALLOC(VERSION(UA_OPEN62541_VER_MAJOR, UA_OPEN62541_VER_MINOR,
-                                UA_OPEN62541_VER_PATCH, UA_OPEN62541_VER_LABEL));
+    // /* Server Description */
+    // UA_BuildInfo_clear(&conf->buildInfo);
+    // conf->buildInfo.productUri = UA_STRING_ALLOC(PRODUCT_URI);
+    // conf->buildInfo.manufacturerName = UA_STRING_ALLOC(MANUFACTURER_NAME);
+    // conf->buildInfo.productName = UA_STRING_ALLOC(PRODUCT_NAME);
+    // conf->buildInfo.softwareVersion =
+    //     UA_STRING_ALLOC(VERSION(UA_OPEN62541_VER_MAJOR, UA_OPEN62541_VER_MINOR,
+    //                             UA_OPEN62541_VER_PATCH, UA_OPEN62541_VER_LABEL));
 #ifdef UA_PACK_DEBIAN
     conf->buildInfo.buildNumber = UA_STRING_ALLOC("deb");
 #else
@@ -160,14 +160,14 @@ setDefaultConfig(UA_ServerConfig *conf) {
 #endif
     conf->buildInfo.buildDate = UA_DateTime_now();
 
-    UA_LOG_INFO(&conf->logger, UA_LOGCATEGORY_USERLAND, APPLICATION_URI_SERVER);
+    // UA_LOG_INFO(&conf->logger, UA_LOGCATEGORY_USERLAND, APPLICATION_URI_SERVER);
 
-    UA_ApplicationDescription_clear(&conf->applicationDescription);
-    conf->applicationDescription.applicationUri = UA_STRING_ALLOC(APPLICATION_URI_SERVER);
-    conf->applicationDescription.productUri = UA_STRING_ALLOC(PRODUCT_URI);
-    conf->applicationDescription.applicationName =
-        UA_LOCALIZEDTEXT_ALLOC("en", APPLICATION_NAME);
-    conf->applicationDescription.applicationType = UA_APPLICATIONTYPE_SERVER;
+    // UA_ApplicationDescription_clear(&conf->applicationDescription);
+    // conf->applicationDescription.applicationUri =
+    // UA_STRING_ALLOC(APPLICATION_URI_SERVER); conf->applicationDescription.productUri =
+    // UA_STRING_ALLOC(PRODUCT_URI); conf->applicationDescription.applicationName =
+    //     UA_LOCALIZEDTEXT_ALLOC("en", APPLICATION_NAME);
+    // conf->applicationDescription.applicationType = UA_APPLICATIONTYPE_SERVER;
     /* conf->applicationDescription.gatewayServerUri = UA_STRING_NULL; */
     /* conf->applicationDescription.discoveryProfileUri = UA_STRING_NULL; */
     /* conf->applicationDescription.discoveryUrlsSize = 0; */
@@ -196,7 +196,7 @@ setDefaultConfig(UA_ServerConfig *conf) {
 
     /* Certificate Verification that accepts every certificate. Can be
      * overwritten when the policy is specialized. */
-    UA_CertificateVerification_AcceptAll(&conf->certificateVerification);
+    // UA_CertificateVerification_AcceptAll(&conf->certificateVerification);
 
     /* * Global Node Lifecycle * */
     /* conf->nodeLifecycle.constructor = NULL; */
